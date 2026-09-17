@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useEffect, useRef, useState } from "react";
 import {
   Menu,
@@ -20,6 +19,8 @@ import remarkGfm from "remark-gfm";
 type Msg = {
   role: "user" | "assistant";
   content: string;
+  type?: "text" | "image";
+  image?: string;
 };
 
 type Chat = {
@@ -58,12 +59,32 @@ function makeTitle(text: string) {
     : cleaned;
 }
 
+/* Detect explicit image-generation requests */
+function isImageRequest(text: string) {
+  const normalized = text.toLowerCase().trim();
+
+  const patterns = [
+    "generate an image",
+    "generate image",
+    "create an image",
+    "create image",
+    "make an image",
+    "make me an image",
+    "make me a picture",
+    "create a picture",
+    "generate a picture",
+    "draw me",
+    "generate me",
+  ];
+
+  return patterns.some((pattern) => normalized.includes(pattern));
+}
+
 function MarkdownMessage({ content }: { content: string }) {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   async function copyCode(code: string) {
     await navigator.clipboard.writeText(code);
-
     setCopiedCode(code);
 
     setTimeout(() => {
@@ -127,9 +148,17 @@ function MarkdownMessage({ content }: { content: string }) {
   );
 }
 
+function ErgonixAvatar() {
+  return (
+    <div className="ergonixAvatar">
+      <span>E</span>
+    </div>
+  );
+}
+
 export default function Home() {
   const [chats, setChats] = useState<Chat[]>([]);
-  const [activeChatId, setActiveChatId] = useState<string>("");
+  const [activeChatId, setActiveChatId] = useState("");
   const [input, setInput] = useState("");
   const [sidebar, setSidebar] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -142,11 +171,13 @@ export default function Home() {
 
   const messages = activeChat?.messages || [];
 
-  // LOAD CHAT HISTORY
+  /* LOAD HISTORY */
+
   useEffect(() => {
     try {
       const savedChats = localStorage.getItem(STORAGE_KEY);
-      const savedActive = localStorage.getItem(ACTIVE_CHAT_KEY);
+      const savedActive =
+        localStorage.getItem(ACTIVE_CHAT_KEY);
 
       if (savedChats) {
         const parsed: Chat[] = JSON.parse(savedChats);
@@ -156,7 +187,9 @@ export default function Home() {
 
           if (
             savedActive &&
-            parsed.some((chat) => chat.id === savedActive)
+            parsed.some(
+              (chat) => chat.id === savedActive
+            )
           ) {
             setActiveChatId(savedActive);
           } else {
@@ -168,20 +201,23 @@ export default function Home() {
         }
       }
 
-      // Try importing your OLD single-chat history
-      const oldChat = localStorage.getItem("ergonix-ai-chat");
+      const oldChat =
+        localStorage.getItem("ergonix-ai-chat");
 
       if (oldChat) {
-        const oldMessages: Msg[] = JSON.parse(oldChat);
+        const oldMessages: Msg[] =
+          JSON.parse(oldChat);
 
         if (oldMessages.length > 0) {
           const imported = createChat();
 
           imported.messages = oldMessages;
 
-          const firstUserMessage = oldMessages.find(
-            (message) => message.role === "user"
-          );
+          const firstUserMessage =
+            oldMessages.find(
+              (message) =>
+                message.role === "user"
+            );
 
           imported.title = firstUserMessage
             ? makeTitle(firstUserMessage.content)
@@ -200,7 +236,10 @@ export default function Home() {
       setChats([firstChat]);
       setActiveChatId(firstChat.id);
     } catch (error) {
-      console.error("Failed to load chats:", error);
+      console.error(
+        "Failed to load chats:",
+        error
+      );
 
       const firstChat = createChat();
 
@@ -211,29 +250,41 @@ export default function Home() {
     setLoaded(true);
   }, []);
 
-  // SAVE CHAT HISTORY
+  /* SAVE HISTORY */
+
   useEffect(() => {
     if (!loaded) return;
 
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(chats));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(chats)
+      );
 
       if (activeChatId) {
-        localStorage.setItem(ACTIVE_CHAT_KEY, activeChatId);
+        localStorage.setItem(
+          ACTIVE_CHAT_KEY,
+          activeChatId
+        );
       }
     } catch (error) {
-      console.error("Failed to save chats:", error);
+      console.error(
+        "Failed to save chats:",
+        error
+      );
     }
   }, [chats, activeChatId, loaded]);
 
-  // SCROLL TO LATEST MESSAGE
+  /* AUTO SCROLL */
+
   useEffect(() => {
     endRef.current?.scrollIntoView({
       behavior: "smooth",
     });
   }, [messages, thinking]);
 
-  // NEW CHAT
+  /* NEW CHAT */
+
   function newChat() {
     const existingEmptyChat = chats.find(
       (chat) => chat.messages.length === 0
@@ -248,20 +299,22 @@ export default function Home() {
 
     const chat = createChat();
 
-    setChats((current) => [chat, ...current]);
+    setChats((current) => [
+      chat,
+      ...current,
+    ]);
+
     setActiveChatId(chat.id);
     setInput("");
     setSidebar(false);
   }
 
-  // OPEN EXISTING CHAT
   function openChat(id: string) {
     setActiveChatId(id);
     setSidebar(false);
     setInput("");
   }
 
-  // DELETE ONE CHAT
   function deleteChat(
     event: React.MouseEvent,
     id: string
@@ -269,11 +322,11 @@ export default function Home() {
     event.stopPropagation();
 
     setChats((currentChats) => {
-      const remaining = currentChats.filter(
-        (chat) => chat.id !== id
-      );
+      const remaining =
+        currentChats.filter(
+          (chat) => chat.id !== id
+        );
 
-      // If every chat was deleted, create a fresh one
       if (remaining.length === 0) {
         const fresh = createChat();
 
@@ -282,16 +335,16 @@ export default function Home() {
         return [fresh];
       }
 
-      // If deleting currently-open chat
       if (id === activeChatId) {
-        setActiveChatId(remaining[0].id);
+        setActiveChatId(
+          remaining[0].id
+        );
       }
 
       return remaining;
     });
   }
 
-  // CLEAR ALL HISTORY
   function clearAllChats() {
     const fresh = createChat();
 
@@ -300,21 +353,35 @@ export default function Home() {
     setInput("");
 
     localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(ACTIVE_CHAT_KEY);
-    localStorage.removeItem("ergonix-ai-chat");
+    localStorage.removeItem(
+      ACTIVE_CHAT_KEY
+    );
+    localStorage.removeItem(
+      "ergonix-ai-chat"
+    );
   }
 
-  // SEND MESSAGE
+  /* ======================================================
+     SEND MESSAGE
+     ====================================================== */
+
   async function send() {
     const text = input.trim();
 
-    if (!text || thinking || !activeChat) return;
+    if (
+      !text ||
+      thinking ||
+      !activeChat
+    )
+      return;
 
-    const currentChatId = activeChat.id;
+    const currentChatId =
+      activeChat.id;
 
     const userMessage: Msg = {
       role: "user",
       content: text,
+      type: "text",
     };
 
     const updatedMessages = [
@@ -331,10 +398,14 @@ export default function Home() {
         chat.id === currentChatId
           ? {
               ...chat,
+
               title: shouldCreateTitle
                 ? makeTitle(text)
                 : chat.title,
-              messages: updatedMessages,
+
+              messages:
+                updatedMessages,
+
               updatedAt: Date.now(),
             }
           : chat
@@ -345,43 +416,113 @@ export default function Home() {
     setThinking(true);
 
     try {
-      const response = await fetch(
-        "https://ergonix-ai-api.honngai-buchem.workers.dev/",
-        {
-          method: "POST",
+      const imageRequest =
+        isImageRequest(text);
 
-          headers: {
-            "Content-Type": "application/json",
-          },
+      let response: Response;
 
-          body: JSON.stringify({
-            messages: updatedMessages,
-          }),
-        }
-      );
+      /* IMAGE REQUEST */
 
-      const data = await response.json();
+      if (imageRequest) {
+        response = await fetch(
+          "https://ergonix-ai-api.honngai-buchem.workers.dev/",
+          {
+            method: "POST",
 
-      if (!response.ok) {
-        throw new Error(
-          data.error || "API request failed"
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+              type: "image",
+              prompt: text,
+            }),
+          }
         );
       }
 
-      const assistantMessage: Msg = {
-        role: "assistant",
-        content: data.reply,
-      };
+      /* NORMAL GROQ CHAT */
+
+      else {
+        const apiMessages =
+          updatedMessages
+            .filter(
+              (message) =>
+                message.type !== "image"
+            )
+            .map((message) => ({
+              role: message.role,
+              content: message.content,
+            }));
+
+        response = await fetch(
+          "https://ergonix-ai-api.honngai-buchem.workers.dev/",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+              messages: apiMessages,
+            }),
+          }
+        );
+      }
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            "API request failed"
+        );
+      }
+
+      let assistantMessage: Msg;
+
+      /* GENERATED IMAGE */
+
+      if (
+        data.type === "image" &&
+        data.image
+      ) {
+        assistantMessage = {
+          role: "assistant",
+          type: "image",
+          content:
+            "Here’s the image I generated:",
+          image: data.image,
+        };
+      }
+
+      /* NORMAL TEXT */
+
+      else {
+        assistantMessage = {
+          role: "assistant",
+          type: "text",
+          content:
+            data.reply ||
+            "No response generated.",
+        };
+      }
 
       setChats((currentChats) =>
         currentChats.map((chat) =>
           chat.id === currentChatId
             ? {
                 ...chat,
+
                 messages: [
                   ...chat.messages,
                   assistantMessage,
                 ],
+
                 updatedAt: Date.now(),
               }
             : chat
@@ -392,8 +533,9 @@ export default function Home() {
 
       const errorMessage: Msg = {
         role: "assistant",
+        type: "text",
         content:
-          "Sorry, I couldn't connect to Ergonix AI.",
+          "Sorry, I couldn't complete that request.",
       };
 
       setChats((currentChats) =>
@@ -401,10 +543,12 @@ export default function Home() {
           chat.id === currentChatId
             ? {
                 ...chat,
+
                 messages: [
                   ...chat.messages,
                   errorMessage,
                 ],
+
                 updatedAt: Date.now(),
               }
             : chat
@@ -415,9 +559,11 @@ export default function Home() {
     }
   }
 
-  // Sort recent chats by last activity
-  const sortedChats = [...chats].sort(
-    (a, b) => b.updatedAt - a.updatedAt
+  const sortedChats = [
+    ...chats,
+  ].sort(
+    (a, b) =>
+      b.updatedAt - a.updatedAt
   );
 
   return (
@@ -425,10 +571,14 @@ export default function Home() {
       <div className="ambient a1" />
       <div className="ambient a2" />
 
+      {/* HEADER */}
+
       <header className="topbar">
         <button
           className="mobileMenu"
-          onClick={() => setSidebar(true)}
+          onClick={() =>
+            setSidebar(true)
+          }
           aria-label="Menu"
         >
           <Menu size={19} />
@@ -455,6 +605,8 @@ export default function Home() {
         </a>
       </header>
 
+      {/* SIDEBAR */}
+
       <aside
         className={`sidebar ${
           sidebar ? "open" : ""
@@ -464,7 +616,9 @@ export default function Home() {
           <span>Workspace</span>
 
           <button
-            onClick={() => setSidebar(false)}
+            onClick={() =>
+              setSidebar(false)
+            }
           >
             <X size={18} />
           </button>
@@ -492,7 +646,8 @@ export default function Home() {
               <button
                 key={chat.id}
                 className={`historyItem ${
-                  chat.id === activeChatId
+                  chat.id ===
+                  activeChatId
                     ? "active"
                     : ""
                 }`}
@@ -560,11 +715,15 @@ export default function Home() {
         />
       )}
 
+      {/* CHAT */}
+
       <section className="chat">
         {messages.length === 0 ? (
           <div className="welcome">
             <div className="aiMark">
-              <Sparkles size={25} />
+              <span className="welcomeLogo">
+                E
+              </span>
             </div>
 
             <div className="eyebrow">
@@ -576,14 +735,14 @@ export default function Home() {
             </h1>
 
             <p>
-              Ask, build, explore, and
-              create with Ergonix AI.
+              Ask, build, explore, create
+              and generate with Ergonix AI.
             </p>
 
             <div className="suggestions">
               {[
                 "Help me write something",
-                "Explain a complex topic",
+                "Generate an image",
                 "Brainstorm an idea",
               ].map((suggestion) => (
                 <button
@@ -605,32 +764,55 @@ export default function Home() {
                   key={index}
                   className={`message ${message.role}`}
                 >
-                  <div className="avatar">
-                    {message.role ===
-                    "assistant"
-                      ? "E"
-                      : "YOU"}
-                  </div>
+                  {message.role ===
+                  "assistant" ? (
+                    <ErgonixAvatar />
+                  ) : (
+                    <div className="userAvatar">
+                      YOU
+                    </div>
+                  )}
 
-                 <div className="bubble">
-  {message.role === "assistant" ? (
-    <MarkdownMessage content={message.content} />
-  ) : (
-    message.content
-  )}
-</div>
+                  <div className="bubble">
+                    {message.type ===
+                      "image" &&
+                    message.image ? (
+                      <div className="imageResponse">
+                        <p>
+                          {message.content}
+                        </p>
+
+                        <img
+                          src={message.image}
+                          alt="Generated by Ergonix AI"
+                          className="generatedImage"
+                        />
+                      </div>
+                    ) : message.role ===
+                      "assistant" ? (
+                      <MarkdownMessage
+                        content={
+                          message.content
+                        }
+                      />
+                    ) : (
+                      message.content
+                    )}
+                  </div>
                 </div>
               )
             )}
 
             {thinking && (
               <div className="message assistant">
-                <div className="avatar">
-                  E
-                </div>
+                <ErgonixAvatar />
 
                 <div className="bubble">
-                  Thinking...
+                  <div className="thinking">
+                    <span />
+                    <span />
+                    <span />
+                  </div>
                 </div>
               </div>
             )}
@@ -638,6 +820,8 @@ export default function Home() {
             <div ref={endRef} />
           </div>
         )}
+
+        {/* COMPOSER */}
 
         <div className="composerWrap">
           <div className="composer">
@@ -650,7 +834,8 @@ export default function Home() {
               }
               onKeyDown={(event) => {
                 if (
-                  event.key === "Enter" &&
+                  event.key ===
+                    "Enter" &&
                   !event.shiftKey
                 ) {
                   event.preventDefault();
