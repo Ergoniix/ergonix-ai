@@ -59,6 +59,75 @@ function makeTitle(text: string) {
     : cleaned;
 }
 
+function MarkdownMessage({ content }: { content: string }) {
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  async function copyCode(code: string) {
+    await navigator.clipboard.writeText(code);
+
+    setCopiedCode(code);
+
+    setTimeout(() => {
+      setCopiedCode(null);
+    }, 2000);
+  }
+
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        code({ className, children, ...props }) {
+          const code = String(children).replace(/\n$/, "");
+          const language =
+            className?.replace("language-", "") || "";
+
+          const isBlock =
+            Boolean(className) || code.includes("\n");
+
+          if (!isBlock) {
+            return (
+              <code className="inlineCode" {...props}>
+                {children}
+              </code>
+            );
+          }
+
+          return (
+            <div className="codeBlock">
+              <div className="codeHeader">
+                <span>{language || "code"}</span>
+
+                <button
+                  onClick={() => copyCode(code)}
+                  className="copyCode"
+                >
+                  {copiedCode === code ? (
+                    <>
+                      <Check size={14} />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={14} />
+                      Copy
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <pre>
+                <code>{code}</code>
+              </pre>
+            </div>
+          );
+        },
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+}
+
 export default function Home() {
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChatId, setActiveChatId] = useState<string>("");
@@ -544,9 +613,13 @@ export default function Home() {
                       : "YOU"}
                   </div>
 
-                  <div className="bubble">
-                    {message.content}
-                  </div>
+                 <div className="bubble">
+  {message.role === "assistant" ? (
+    <MarkdownMessage content={message.content} />
+  ) : (
+    message.content
+  )}
+</div>
                 </div>
               )
             )}
