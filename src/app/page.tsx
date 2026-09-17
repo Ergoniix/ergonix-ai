@@ -1,6 +1,5 @@
 "use client";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+
 import { Check, Copy } from "lucide-react";
 
 import { useEffect, useRef, useState } from "react";
@@ -12,7 +11,12 @@ import {
   Trash2,
   X,
   MessageSquare,
+  Check,
+  Copy,
 } from "lucide-react";
+
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type Msg = {
   role: "user" | "assistant";
