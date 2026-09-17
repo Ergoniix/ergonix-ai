@@ -24,12 +24,59 @@ export default function Home() {
   },[messages,loaded]);
 
   function newChat(){ setMessages([]); setSidebar(false); }
-  function send(){
-    const text=input.trim(); if(!text) return;
-    setMessages(m=>[...m,{role:"user",content:text}]);
-    setInput("");
-    setTimeout(()=>setMessages(m=>[...m,{role:"assistant",content:"Ergonix AI interface is ready. Connect your API next and I’ll answer from the selected model."}]),350);
+async function send() {
+  const text = input.trim();
+  if (!text) return;
+
+  const userMessage: Msg = {
+    role: "user",
+    content: text,
+  };
+
+  const updatedMessages = [...messages, userMessage];
+
+  setMessages(updatedMessages);
+  setInput("");
+
+  try {
+    const response = await fetch(
+      "https://ergonix-ai-api.honngai-buchem.workers.dev/",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: updatedMessages,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "API request failed");
+    }
+
+    setMessages((m) => [
+      ...m,
+      {
+        role: "assistant",
+        content: data.reply,
+      },
+    ]);
+  } catch (error) {
+    console.error(error);
+
+    setMessages((m) => [
+      ...m,
+      {
+        role: "assistant",
+        content: "Sorry, I couldn't connect to Ergonix AI.",
+      },
+    ]);
   }
+}
 
   return <main className="app">
     <div className="ambient a1"/><div className="ambient a2"/>
