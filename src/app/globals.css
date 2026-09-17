@@ -66,3 +66,153 @@
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+/* ===== AI MARKDOWN ===== */
+
+.assistant .bubble {
+  width: 100%;
+}
+
+.assistant .bubble p {
+  margin: 0 0 14px;
+  line-height: 1.7;
+}
+
+.assistant .bubble p:last-child {
+  margin-bottom: 0;
+}
+
+.assistant .bubble h1,
+.assistant .bubble h2,
+.assistant .bubble h3 {
+  color: #f4f6fa;
+  margin: 24px 0 12px;
+  line-height: 1.3;
+}
+
+.assistant .bubble h1 {
+  font-size: 1.5rem;
+}
+
+.assistant .bubble h2 {
+  font-size: 1.25rem;
+}
+
+.assistant .bubble h3 {
+  font-size: 1.05rem;
+}
+
+.assistant .bubble ul,
+.assistant .bubble ol {
+  margin: 12px 0 16px 22px;
+}
+
+.assistant .bubble li {
+  margin: 7px 0;
+  line-height: 1.65;
+}
+
+.assistant .bubble strong {
+  color: #fff;
+  font-weight: 650;
+}
+
+.inlineCode {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-family: monospace;
+  font-size: 0.85em;
+}
+
+.codeBlock {
+  margin: 18px 0;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: #0b0e14;
+  border-radius: 13px;
+  overflow: hidden;
+}
+
+.codeHeader {
+  height: 39px;
+  padding: 0 13px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  background: rgba(255, 255, 255, 0.035);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+
+  color: #747e90;
+  font-size: 0.68rem;
+  text-transform: lowercase;
+}
+
+.copyCode {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  border: 0;
+  background: transparent;
+  color: #8993a5;
+
+  font-size: 0.68rem;
+  cursor: pointer;
+}
+
+.copyCode:hover {
+  color: white;
+}
+
+.codeBlock pre {
+  overflow-x: auto;
+  padding: 17px;
+}
+
+.codeBlock pre code {
+  font-family:
+    "SFMono-Regular",
+    Consolas,
+    "Liberation Mono",
+    monospace;
+
+  font-size: 0.8rem;
+  line-height: 1.65;
+  color: #d9deea;
+}
+
+.assistant .bubble blockquote {
+  margin: 15px 0;
+  padding: 4px 0 4px 14px;
+
+  border-left: 2px solid #6878dd;
+  color: #9ba5b7;
+}
+
+.assistant .bubble a {
+  color: #8794ff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.assistant .bubble table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 17px 0;
+  font-size: 0.82rem;
+}
+
+.assistant .bubble th,
+.assistant .bubble td {
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  padding: 9px 11px;
+  text-align: left;
+}
+
+.assistant .bubble th {
+  background: rgba(255, 255, 255, 0.045);
+  color: #fff;
+}
